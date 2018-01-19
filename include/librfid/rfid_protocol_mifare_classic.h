@@ -45,5 +45,6 @@ extern int mfcl_auth(struct rfid_protocol_handle *ph, u_int8_t cmd, u_int8_t blo
 extern int mfcl_sector2block(u_int8_t sector);
 extern int mfcl_block2sector(u_int8_t block);
 extern int mfcl_sector_blocks(u_int8_t sector);
+extern int mfcl_backdoor_unlock(struct rfid_protocol_handle *ph);
 
 #endif /* _MIFARE_CLASSIC_H */

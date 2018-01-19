@@ -50,6 +50,7 @@ static void help(void)
 		" -r	--read		Read a mifare sector\n"
 		" -l	--loop-read	Loop reading a mifare sector\n"
 		" -w	--write		Write a mifare sector\n"
+	    " -u    --uid       Change the UID (Requires Nonstandard MiFare)\n"
 		" -k	--key		Specify mifare access key (in hex tuples)\n"
 		" -b    --brute-force n	Brute Force read sector n\n");
 }
@@ -59,6 +60,7 @@ static struct option mifare_opts[] = {
 	{ "read", 1, 0, 'r' },
 	{ "loop-read", 1, 0, 'l' },
 	{ "write", 1 ,0, 'w' },
+	{ "uid", 1 ,0, 'w' },
 	{ "help", 0, 0, 'h' },
 	{ "brute-force", 1, 0, 'b' },
 	{ 0, 0, 0, 0 }
@@ -94,6 +96,35 @@ static void mifare_l3(void)
 	printf("Mifare card available\n");
 }
 
+static int mifare_change_uid(unsigned char *uid_data,
+        unsigned int uid_len)
+{
+    int rc;
+    rc = mfcl_backdoor_unlock(ph);
+
+    if (rc < 0 )
+    {
+        fprintf(stderr, "mifare Backdoor error\n");
+        return rc;
+    }
+    else
+    {
+        rc = rfid_protocol_write(ph, 0, uid_data, uid_len);
+
+        if (rc < 0 )
+        {
+            fprintf(stderr, "mifare WRITE UID error\n");
+            return rc;
+        }
+        else
+        {
+            printf("mifare UID changed succeeded!\n");
+        }
+    }
+    return 0;
+}
+
+
 int main(int argc, char **argv)
 {
 	int len, rc, c, option_index = 0;
@@ -122,7 +153,7 @@ int main(int argc, char **argv)
 	}
 
 	while (1) {
-		c = getopt_long(argc, argv, "k:r:l:w:b:h", mifare_opts,
+		c = getopt_long(argc, argv, "k:r:l:w:u:b:h", mifare_opts,
 				&option_index);
 		if (c == -1)
 			break;
@@ -229,6 +260,20 @@ int main(int argc, char **argv)
 			}
 			printf("success\n");
 			break;
+        case 'u':
+            len = hexread(buf, optarg, strlen(optarg));
+            printf("uid(key='%s'):",
+                hexdump(key, MIFARE_CL_KEY_LEN));
+            printf(" '%s'(%u):", hexdump(buf, len), len);
+            mifare_l3();
+
+            rc = mifare_change_uid(buf, len);
+            if (rc < 0) {
+                printf("\n");
+                fprintf(stderr, "error during write\n");
+                break;
+            }
+            break;
 		case 'h':
 		default:
 			help();

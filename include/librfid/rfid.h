@@ -68,6 +68,7 @@ enum rfid_frametype {
 	RFID_MIFARE_FRAME,
 	RFID_15693_FRAME,
 	RFID_15693_FRAME_ICODE1,
+	RFID_RAW_8BIT_PARITY_FRAME,
 };
 
 #endif /* _RFID_H */

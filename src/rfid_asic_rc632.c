@@ -946,14 +946,19 @@ rc632_iso14443a_fini(struct iso14443a_handle *handle_14443)
 static int
 rc632_iso14443a_transceive_sf(struct rfid_asic_handle *handle,
 				u_int8_t cmd,
-		    		struct iso14443a_atqa *atqa)
+				u_int8_t *rx_buf, unsigned int *rx_len)
 {
 	int ret;
 	u_int8_t tx_buf[1];
-	u_int8_t rx_len = 2;
+	u_int8_t rxl;
 	u_int8_t error_flag;
 
-	memset(atqa, 0, sizeof(*atqa));
+    if (*rx_len > 0xff)
+        rxl = 0xff;
+    else
+        rxl = *rx_len;
+
+	memset(rx_buf, 0, rxl);
 
 	tx_buf[0] = cmd;
 
@@ -980,7 +985,7 @@ rc632_iso14443a_transceive_sf(struct rfid_asic_handle *handle,
 		return ret;
 
 	ret = rc632_transceive(handle, tx_buf, sizeof(tx_buf),
-				(u_int8_t *)atqa, &rx_len,
+				(u_int8_t *)rx_buf, &rxl,
 				ISO14443A_FDT_ANTICOL_LAST1, 0);
 	if (ret < 0) {
 		DEBUGP("error during rc632_transceive()\n");
@@ -1007,10 +1012,13 @@ rc632_iso14443a_transceive_sf(struct rfid_asic_handle *handle,
 		/* FIXME: how to signal this up the stack */
 	}
 
-	if (rx_len != 2) {
-		DEBUGP("rx_len(%d) != 2\n", rx_len);
+	if (rxl != *rx_len) {
+		DEBUGP("rx_len(%d) != %d\n", rxl, *rx_len);
 		return -1;
 	}
+
+	*rx_len = rxl;
+
 
 	return 0;
 }
@@ -1053,6 +1061,11 @@ rc632_iso14443ab_transceive(struct rfid_asic_handle *handle,
 		channel_red = RC632_CR_CRC3309 | RC632_CR_RX_CRC_ENABLE
 				| RC632_CR_TX_CRC_ENABLE;
 		break;
+
+	case RFID_RAW_8BIT_PARITY_FRAME:
+	    channel_red = RC632_CR_PARITY_ENABLE|RC632_CR_PARITY_ODD;
+	    break;
+
 	case RFID_15693_FRAME_ICODE1:
 		/* FIXME: implement */
 	default:

@@ -43,11 +43,11 @@ int _rdr_rc632_transceive(struct rfid_reader_handle *rh,
 }
 
 int _rdr_rc632_transceive_sf(struct rfid_reader_handle *rh,
-			     unsigned char cmd, struct iso14443a_atqa *atqa)
+			     unsigned char cmd, u_int8_t *rx_buf, unsigned int *rx_len)
 {
 	return rh->ah->asic->priv.rc632.fn.iso14443a.transceive_sf(rh->ah,
 								   cmd,
-								   atqa);
+								   rx_buf, rx_len);
 }
 
 int

@@ -49,7 +49,7 @@ struct rfid_reader {
 	struct rfid_14443a_reader {
 		int (*transceive_sf)(struct rfid_reader_handle *h,
 				     unsigned char cmd,
-				     struct iso14443a_atqa *atqa);
+				     u_int8_t *rx_buf, unsigned int *rx_len);
 		int (*transceive_acf)(struct rfid_reader_handle *h,
 				      struct iso14443a_anticol_cmd *cmd,
 				      unsigned int *bit_of_col);

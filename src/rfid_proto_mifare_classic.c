@@ -41,6 +41,8 @@
 #define MIFARE_CL_READ_FWT	250
 #define MIFARE_CL_WRITE_FWT	600
 
+#define MIFARE_CL_DEFAULT_FWT 600
+
 static int
 mfcl_read(struct rfid_protocol_handle *ph, unsigned int page,
 	  unsigned char *rx_data, unsigned int *rx_len)
@@ -234,4 +236,70 @@ int mfcl_sector_blocks(u_int8_t sector)
 		return MIFARE_CL_BLOCKS_P_SECTOR_4k;
 	else
 		return -EINVAL;
+}
+
+
+
+int mfcl_backdoor_unlock(struct rfid_protocol_handle *ph)
+{
+    unsigned char tx[6];
+    unsigned char rx[10];
+    unsigned int rx_len;
+    int ret;
+
+    // perform halt here....
+    tx[0] = 0x50;
+    tx[1] = 0x00;
+
+    rx_len=1;
+
+    // send a HALT command
+    ret = rfid_layer2_transceive(ph->l2h, RFID_14443A_FRAME_REGULAR,
+                   (unsigned char *)tx, 2,
+                   (unsigned char *) &rx, &rx_len,
+                   MIFARE_CL_DEFAULT_FWT, 0);
+
+    // passive ACK????
+    if (ret == -ETIMEDOUT)
+    {
+        // Ignore a timeout, the HALT command does not reply
+    }
+    else if (ret < 0)
+    {
+        printf("Failed halt command: RET=%d\r\n",ret);
+        return ret;
+    }
+
+    // send the BACKDOOR unlock1 command
+    // expect 1 byte back..
+    rx_len=1;
+    ret = iso14443a_transceive_sf(ph->l2h, 0x40, rx, &rx_len);
+
+    if (ret < 0)
+    {
+        printf("Unlock1 command Failed: %d\r\n", ret);
+        return ret;
+    }
+    else if (*rx != 0xa)
+    {
+        printf("Unlock1 command did not return correct value: 0x%x\r\n", *rx);
+        return -1;
+    }
+
+    // now send the second part of the backdoor unlock command
+    tx[0] = 0x43;
+    rx_len=1;
+
+    ret = rfid_layer2_transceive(ph->l2h, RFID_RAW_8BIT_PARITY_FRAME,
+               (unsigned char *)tx, 1,
+               (unsigned char *) &rx, &rx_len,
+               MIFARE_CL_DEFAULT_FWT, 0);
+
+    if (ret < 0)
+    {
+        printf("Unlock2 command Failed\r\n");
+        return ret;
+    }
+
+    return(0);
 }

@@ -7,7 +7,7 @@ int _rdr_rc632_transceive(struct rfid_reader_handle *rh,
 			  unsigned char *rx_data, unsigned int *rx_len,
 			  u_int64_t timeout, unsigned int flags);
 int _rdr_rc632_transceive_sf(struct rfid_reader_handle *rh,
-			     unsigned char cmd, struct iso14443a_atqa *atqa);
+			     unsigned char cmd, u_int8_t *rx_buf, unsigned int *rx_len);
 int _rdr_rc632_transceive_acf(struct rfid_reader_handle *rh,
 			      struct iso14443a_anticol_cmd *cmd,
 			      unsigned int *bit_of_col);

@@ -41,11 +41,11 @@ unsigned long randctx[4]={0x22d4a017,0x773a1f44,0xc39e1460,0x9cde8801};
 int
 iso14443a_transceive_sf(struct rfid_layer2_handle *handle,
 			 unsigned char cmd,
-			 struct iso14443a_atqa *atqa)
+			 u_int8_t *rx_buf, unsigned int *rx_len)
 {
 	const struct rfid_reader *rdr = handle->rh->reader;
 
-	return rdr->iso14443a.transceive_sf(handle->rh, cmd, atqa);
+	return rdr->iso14443a.transceive_sf(handle->rh, cmd, rx_buf, rx_len);
 }
 
 /* Transmit an anticollission bit frame */
@@ -134,10 +134,12 @@ iso14443a_anticol(struct rfid_layer2_handle *handle)
 	memset(atqa, 0, sizeof(&atqa));
 	memset(&acf, 0, sizeof(acf));
 
+	rx_len = sizeof(struct iso14443a_atqa);
+
 	if (handle->flags & RFID_OPT_LAYER2_WUP)
-		ret = iso14443a_transceive_sf(handle, ISO14443A_SF_CMD_WUPA, atqa);
+		ret = iso14443a_transceive_sf(handle, ISO14443A_SF_CMD_WUPA, (u_int8_t*)atqa, &rx_len);
 	else
-		ret = iso14443a_transceive_sf(handle, ISO14443A_SF_CMD_REQA, atqa);
+		ret = iso14443a_transceive_sf(handle, ISO14443A_SF_CMD_REQA, (u_int8_t*)atqa, &rx_len);
 	if (ret < 0) {
 		h->state = ISO14443A_STATE_REQA_SENT;
 		DEBUGP("error during transceive_sf: %d\n", ret);
